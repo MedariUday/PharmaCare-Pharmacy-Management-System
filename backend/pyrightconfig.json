@@ -1,0 +1,8 @@
+{
+  "venvPath": "c:\\Users\\udaym\\OneDrive\\Desktop\\College MERN Stack\\pharmacy management system\\backend",
+  "venv": "venv",
+  "pythonPath": "c:\\Users\\udaym\\OneDrive\\Desktop\\College MERN Stack\\pharmacy management system\\backend\\venv\\Scripts\\python.exe",
+  "analysis": {
+    "extraPaths": ["./app"]
+  }
+}

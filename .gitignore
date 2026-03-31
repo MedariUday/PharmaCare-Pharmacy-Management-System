@@ -1,0 +1,29 @@
+# Root .gitignore for PharmaCare
+
+# Dependencies
+node_modules/
+backend/venv/
+backend/__pycache__/
+*.pyc
+
+# Environment
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Build
+dist/
+build/
+*.log
+
+# IDEs
+.vscode/
+.idea/
+.DS_Store
+
+# Misc
+backend/diag_full_out.txt
+backend/full_traceback.txt
+backend/test_reg_error.txt
