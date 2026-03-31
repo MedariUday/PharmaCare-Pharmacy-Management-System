@@ -41,7 +41,8 @@ async def login_customer(form_data: OAuth2PasswordRequestForm = Depends()):
         "access_token": access_token, 
         "token_type": "bearer", 
         "role": "Customer", 
-        "name": customer_doc.get("name")
+        "name": customer_doc.get("name"),
+        "id": str(customer_doc["_id"])
     }
 
 # History routes

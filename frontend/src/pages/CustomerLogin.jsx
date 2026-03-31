@@ -21,7 +21,8 @@ export default function CustomerLogin() {
     setError('');
     try {
       const res = await loginCustomer(email, password);
-      login(res.data.access_token, res.data.role, res.data.name);
+      // Ensure the return 'id' is passed as the 4th argument
+      login(res.data.access_token, res.data.role, res.data.name, res.data.id);
       navigate('/customer/dashboard');
     } catch (err) {
       setError(err.response?.data?.detail || 'Invalid email or password. Please try again.');
