@@ -5,6 +5,8 @@ import { ShoppingBag, FileText, Pill, Clock, ArrowRight, Activity } from 'lucide
 import { Link } from 'react-router-dom';
 import MainLayout from '../components/MainLayout';
 import Recommendations from '../components/Recommendations';
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { getCustomerOrders, getCustomerBills, getCustomerMedicines, getCustomerStats } from '../services/api';
 
 function StatCard({ icon, label, value, color, link }) {
   const content = (
@@ -32,15 +34,20 @@ export default function CustomerDashboard() {
     lastOrderDate: null
   });
   const [recentOrders, setRecentOrders] = useState([]);
+  const [distribution, setDistribution] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const COLORS = ['#818cf8', '#6366f1', '#4f46e5', '#4338ca', '#3730a3'];
 
   useEffect(() => {
     async function fetchData() {
+      if (!user?.id) return;
       try {
-        const [ordersRes, billsRes, medsRes] = await Promise.all([
+        const [ordersRes, billsRes, medsRes, statsRes] = await Promise.all([
           getCustomerOrders(),
           getCustomerBills(),
-          getCustomerMedicines()
+          getCustomerMedicines(),
+          getCustomerStats(user.id)
         ]);
         const totalSpent = billsRes.data.reduce((sum, bill) => sum + bill.total, 0);
         const lastOrderDate = ordersRes.data.length > 0 
@@ -57,6 +64,7 @@ export default function CustomerDashboard() {
           lastOrderDate: lastOrderDate
         });
         setRecentOrders(ordersRes.data.sort((a,b) => new Date(b.order_date) - new Date(a.order_date)).slice(0, 5));
+        setDistribution(statsRes.data.medicine_distribution || []);
       } catch (err) {
         console.error(err);
       } finally {
@@ -64,7 +72,7 @@ export default function CustomerDashboard() {
       }
     }
     fetchData();
-  }, []);
+  }, [user?.id]);
 
   if (loading) return (
     <div className="flex min-h-screen bg-[#0f172a] items-center justify-center">
@@ -158,6 +166,61 @@ export default function CustomerDashboard() {
                         </div>
                     ))
                 )}
+                </div>
+            </div>
+
+            {/* Medicine Distribution Chart */}
+            <div className="bg-slate-800/20 backdrop-blur-3xl p-6 sm:p-10 rounded-[3rem] border border-white/5 relative overflow-hidden group">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/5 blur-3xl rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform"></div>
+                
+                <div className="flex justify-between items-center mb-8 relative z-10">
+                   <h2 className="text-xl sm:text-2xl font-black text-white uppercase italic tracking-tighter">Clinical Distribution</h2>
+                   <Pill className="text-purple-400 opacity-50" size={24} />
+                </div>
+
+                <div className="h-[300px] w-full relative z-10">
+                    {distribution.length > 0 ? (
+                        <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                                <Pie
+                                    data={distribution}
+                                    cx="50%"
+                                    cy="50%"
+                                    innerRadius={60}
+                                    outerRadius={80}
+                                    paddingAngle={5}
+                                    dataKey="value"
+                                    stroke="none"
+                                >
+                                    {distribution.map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                    ))}
+                                </Pie>
+                                <Tooltip 
+                                    contentStyle={{ 
+                                        backgroundColor: '#1e293b', 
+                                        border: 'none', 
+                                        borderRadius: '1rem',
+                                        fontSize: '12px',
+                                        fontWeight: 'bold',
+                                        color: '#fff',
+                                        boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)'
+                                    }}
+                                    itemStyle={{ color: '#fff' }}
+                                />
+                                <Legend 
+                                    verticalAlign="bottom" 
+                                    height={36}
+                                    formatter={(value) => <span className="text-[10px] font-black uppercase text-slate-400 italic tracking-widest">{value}</span>}
+                                />
+                            </PieChart>
+                        </ResponsiveContainer>
+                    ) : (
+                        <div className="flex flex-col items-center justify-center h-full text-center">
+                            <Activity className="text-slate-700 mb-4" size={48} />
+                            <p className="text-slate-500 font-black uppercase tracking-[0.2em] text-[10px]">No prescription data available.</p>
+                        </div>
+                    )}
                 </div>
             </div>
 

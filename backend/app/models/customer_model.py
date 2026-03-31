@@ -75,17 +75,33 @@ async def get_customer_stats(customer_id: str) -> dict:
     
     total_orders = len(orders)
     last_purchase = None
+    medicine_freq = {}
+    
     if orders:
-        # Sort by date in python or use find().sort()
+        # Sort by date
         orders.sort(key=lambda x: x.get("order_date") or x.get("created_at"), reverse=True)
         last_purchase = orders[0].get("order_date") or orders[0].get("created_at")
+        
+        # Calculate medicine distribution
+        for order in orders:
+            for item in order.get("items", []):
+                name = item.get("medicine_name", "Unknown")
+                quantity = item.get("quantity", 0)
+                medicine_freq[name] = medicine_freq.get(name, 0) + quantity
 
-    # For now, we'll assume outstanding balance is 0 or based on unpaid bills if they existed
-    # In this system, bills are usually generated and paid.
-    # We'll return some mock/calculated values for the UI requirements.
+    # Transform frequency into list for chart
+    medicine_distribution = [
+        {"name": name, "value": count} 
+        for name, count in medicine_freq.items()
+    ]
+    # Sort by value DESC and take top 5
+    medicine_distribution.sort(key=lambda x: x["value"], reverse=True)
+    medicine_distribution = medicine_distribution[:5]
+
     return {
         "total_orders": total_orders,
         "last_purchase": last_purchase,
-        "outstanding_balance": 0.0, # Placeholder for now
-        "total_spent": sum(o.get("total_amount", 0) for o in orders)
+        "outstanding_balance": 0.0,
+        "total_spent": sum(o.get("total_amount", 0) for o in orders),
+        "medicine_distribution": medicine_distribution
     }
