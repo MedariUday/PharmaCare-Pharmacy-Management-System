@@ -40,13 +40,18 @@ export default function CustomerDashboard() {
 
   useEffect(() => {
     async function fetchData() {
-      if (!user?.id) return;
+      // Check for user.userId (matching AuthContext)
+      if (!user?.userId) {
+        if (user) setLoading(false); // If user exists but no ID, still stop loading
+        return;
+      }
+      
       try {
         const [ordersRes, billsRes, medsRes, statsRes] = await Promise.all([
           getCustomerOrders(),
           getCustomerBills(),
           getCustomerMedicines(),
-          getCustomerStats(user.id)
+          getCustomerStats(user.userId)
         ]);
         const totalSpent = billsRes.data.reduce((sum, bill) => sum + bill.total, 0);
         const lastOrderDate = ordersRes.data.length > 0 
@@ -71,7 +76,7 @@ export default function CustomerDashboard() {
       }
     }
     fetchData();
-  }, [user?.id]);
+  }, [user?.userId]);
 
   if (loading) return (
     <div className="flex min-h-screen bg-[#0f172a] items-center justify-center">
