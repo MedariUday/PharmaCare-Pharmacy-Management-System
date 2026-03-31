@@ -15,11 +15,28 @@ async def lifespan(app: FastAPI):
     # Shutdown
     await close_mongo_connection()
 
+import os
+
 app = FastAPI(title=settings.PROJECT_NAME, lifespan=lifespan)
+
+# Dynamic CORS allowed origins (from environment variables)
+origins = [
+    "http://localhost:5173",  # Local dev
+    "http://localhost:3000",
+    "http://127.0.0.1:5173",
+]
+
+# Add production frontend URL from env
+production_frontend = os.getenv("FRONTEND_URL")
+if production_frontend:
+    # Ensure it handles both trailing slash and no trailing slash
+    clean_url = production_frontend.rstrip('/')
+    origins.append(clean_url)
+    origins.append(f"{clean_url}/")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # Allow all origins for dev; restrict in prod
+    allow_origins=origins, 
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
