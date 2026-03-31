@@ -119,7 +119,9 @@ async def seed_data():
                     "medicine_id": str(m["_id"]),
                     "name": m["name"],
                     "quantity": qty,
-                    "price": price
+                    "price": price,
+                    "category": m.get("category", "General"),
+                    "subtotal": round(price * qty, 2)
                 })
                 total_amount += price * qty
             

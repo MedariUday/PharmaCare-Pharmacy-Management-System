@@ -268,12 +268,26 @@ async def clinical_analytics():
                     {"$ifNull": ["$med_info.category", "General"]}
                 ]
             },
-            "value": {"$sum": "$medicines.subtotal"}
+            "value": {
+                "$sum": {
+                    "$multiply": [
+                        {"$ifNull": ["$medicines.price", 0]},
+                        {"$ifNull": ["$medicines.quantity", 0]}
+                    ]
+                }
+            }
         }},
         {"$sort": {"value": -1}}
     ]
     category_data = await db["bills"].aggregate(cat_pipeline).to_list(10)
-    category_data = [{"name": c["_id"] if c["_id"] else "General", "value": c["value"]} for c in category_data]
+    # Filter out null or empty names and ensure value is rounded
+    category_data = [
+        {
+            "name": str(c["_id"]) if c["_id"] else "General", 
+            "value": round(c["value"], 2)
+        } 
+        for c in category_data if c["_id"]
+    ]
 
     # 5. Inventory Health (Urgent Restocks)
     # Count where stock <= minimum_stock (Fallback to 10 if missing)
