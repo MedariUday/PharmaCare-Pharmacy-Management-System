@@ -1,13 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { getCustomerOrders, getCustomerBills, getCustomerMedicines } from '../services/api';
-import { ShoppingBag, FileText, Pill, Clock, ArrowRight, Activity } from 'lucide-react';
+import { getCustomerOrders, getCustomerBills, getCustomerMedicines, getCustomerStats } from '../services/api';
+import { ShoppingBag, FileText, Pill, Clock, ArrowRight, Activity, Layers, ChevronRight, PackageSearch } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import MainLayout from '../components/MainLayout';
 import Recommendations from '../components/Recommendations';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Label } from 'recharts';
-import { getCustomerOrders, getCustomerBills, getCustomerMedicines, getCustomerStats } from '../services/api';
-import { ShoppingBag, FileText, Pill, Clock, ArrowRight, Activity, Layers, ChevronRight, PackageSearch } from 'lucide-react';
 
 function StatCard({ icon, label, value, color, link }) {
   const content = (
