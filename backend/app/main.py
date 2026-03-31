@@ -33,12 +33,29 @@ app.add_middleware(
 async def health_check():
     try:
         db = get_database()
-        if db is None:
-            return JSONResponse(status_code=503, content={"status": "unhealthy", "error": "Database not initialized"})
-        await db.command("ping")
-        return {"status": "healthy", "database": "connected", "mode": "production"}
+        db_connected = False
+        db_error = None
+        
+        if db is not None:
+            try:
+                await db.command("ping")
+                db_connected = True
+            except Exception as e:
+                db_error = str(e)
+        
+        return {
+            "status": "online",
+            "database_connected": db_connected,
+            "error": db_error,
+            "mode": "production" if os.getenv("RENDER") else "development",
+            "diagnostics": {
+                "MONGODB_URL_found": bool(os.getenv("MONGODB_URL") or os.getenv("MONGODB_URI")),
+                "SECRET_KEY_found": bool(os.getenv("SECRET_KEY")),
+                "FRONTEND_URL_found": bool(os.getenv("FRONTEND_URL"))
+            }
+        }
     except Exception as e:
-        return JSONResponse(status_code=503, content={"status": "unhealthy", "error": str(e)})
+        return JSONResponse(status_code=503, content={"status": "error", "message": str(e)})
 
 # ── Static Files (Invoices) ──────────────────────────────────
 app.mount("/static", StaticFiles(directory="static"), name="static")
