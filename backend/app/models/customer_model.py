@@ -75,33 +75,46 @@ async def get_customer_stats(customer_id: str) -> dict:
     
     total_orders = len(orders)
     last_purchase = None
-    medicine_freq = {}
+    category_freq = {}
+    total_items_purchased = 0
     
     if orders:
         # Sort by date
         orders.sort(key=lambda x: x.get("order_date") or x.get("created_at"), reverse=True)
         last_purchase = orders[0].get("order_date") or orders[0].get("created_at")
         
-        # Calculate medicine distribution
+        # Calculate category distribution
         for order in orders:
-            for item in order.get("items", []):
-                name = item.get("medicine_name", "Unknown")
+            for item in order.get("items", []) or order.get("medicines", []):
+                cat = item.get("category")
                 quantity = item.get("quantity", 0)
-                medicine_freq[name] = medicine_freq.get(name, 0) + quantity
+                total_items_purchased += quantity
+                
+                # If category is missing in order, try to find it in medicine record
+                if not cat:
+                    med_id = item.get("medicine_id")
+                    if med_id:
+                        med = await db["medicines"].find_one({"_id": ObjectId(med_id) if isinstance(med_id, str) and len(med_id)==24 else med_id})
+                        cat = med.get("category", "General") if med else "General"
+                    else:
+                        cat = "General"
+                
+                category_freq[cat] = category_freq.get(cat, 0) + quantity
 
     # Transform frequency into list for chart
-    medicine_distribution = [
+    category_distribution = [
         {"name": name, "value": count} 
-        for name, count in medicine_freq.items()
+        for name, count in category_freq.items()
     ]
-    # Sort by value DESC and take top 5
-    medicine_distribution.sort(key=lambda x: x["value"], reverse=True)
-    medicine_distribution = medicine_distribution[:5]
+    # Sort by value DESC
+    category_distribution.sort(key=lambda x: x["value"], reverse=True)
 
     return {
         "total_orders": total_orders,
         "last_purchase": last_purchase,
         "outstanding_balance": 0.0,
-        "total_spent": sum(o.get("total_amount", 0) for o in orders),
-        "medicine_distribution": medicine_distribution
+        "total_spent": sum(o.get("total_amount", 0) or o.get("total", 0) for o in orders),
+        "category_distribution": category_distribution,
+        "total_items_purchased": total_items_purchased,
+        "unique_categories": len(category_freq)
     }

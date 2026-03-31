@@ -5,8 +5,9 @@ import { ShoppingBag, FileText, Pill, Clock, ArrowRight, Activity } from 'lucide
 import { Link } from 'react-router-dom';
 import MainLayout from '../components/MainLayout';
 import Recommendations from '../components/Recommendations';
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Label } from 'recharts';
 import { getCustomerOrders, getCustomerBills, getCustomerMedicines, getCustomerStats } from '../services/api';
+import { ShoppingBag, FileText, Pill, Clock, ArrowRight, Activity, Layers, ChevronRight, PackageSearch } from 'lucide-react';
 
 function StatCard({ icon, label, value, color, link }) {
   const content = (
@@ -64,7 +65,7 @@ export default function CustomerDashboard() {
           lastOrderDate: lastOrderDate
         });
         setRecentOrders(ordersRes.data.sort((a,b) => new Date(b.order_date) - new Date(a.order_date)).slice(0, 5));
-        setDistribution(statsRes.data.medicine_distribution || []);
+        setDistribution(statsRes.data.category_distribution || []);
       } catch (err) {
         console.error(err);
       } finally {
@@ -169,83 +170,94 @@ export default function CustomerDashboard() {
                 </div>
             </div>
 
-            {/* Medicine Distribution Chart */}
-            <div className="bg-slate-800/20 backdrop-blur-3xl p-6 sm:p-10 rounded-[3rem] border border-white/5 relative overflow-hidden group">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/5 blur-3xl rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform"></div>
+            {/* Previous Medicines Category Share Visualization */}
+            <div className="bg-slate-800/20 backdrop-blur-3xl p-6 sm:p-10 rounded-[3rem] border border-white/5 relative overflow-hidden group flex flex-col h-full min-h-[500px]">
+                <div className="absolute top-0 right-0 w-48 h-48 bg-indigo-500/5 blur-[80px] rounded-full -mr-24 -mt-24 group-hover:scale-150 transition-transform"></div>
                 
-                <div className="flex justify-between items-center mb-8 relative z-10">
-                   <h2 className="text-xl sm:text-2xl font-black text-white uppercase italic tracking-tighter">Clinical Distribution</h2>
-                   <Pill className="text-purple-400 opacity-50" size={24} />
+                <div className="flex items-center gap-4 mb-8 relative z-10">
+                   <div className="p-3 bg-indigo-500/10 rounded-2xl text-indigo-400 border border-indigo-500/20">
+                      <Layers size={22} strokeWidth={2.5} />
+                   </div>
+                   <div>
+                      <h2 className="text-xl sm:text-2xl font-black text-white uppercase italic tracking-tighter">Category Share</h2>
+                      <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest mt-0.5">Based on your previous purchases</p>
+                   </div>
                 </div>
 
-                <div className="h-[300px] w-full relative z-10">
+                <div className="flex-1 flex flex-col justify-between relative z-10 space-y-8">
                     {distribution.length > 0 ? (
-                        <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                                <Pie
-                                    data={distribution}
-                                    cx="50%"
-                                    cy="50%"
-                                    innerRadius={60}
-                                    outerRadius={80}
-                                    paddingAngle={5}
-                                    dataKey="value"
-                                    stroke="none"
-                                >
-                                    {distribution.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                    ))}
-                                </Pie>
-                                <Tooltip 
-                                    contentStyle={{ 
-                                        backgroundColor: '#1e293b', 
-                                        border: 'none', 
-                                        borderRadius: '1rem',
-                                        fontSize: '12px',
-                                        fontWeight: 'bold',
-                                        color: '#fff',
-                                        boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)'
-                                    }}
-                                    itemStyle={{ color: '#fff' }}
-                                />
-                                <Legend 
-                                    verticalAlign="bottom" 
-                                    height={36}
-                                    formatter={(value) => <span className="text-[10px] font-black uppercase text-slate-400 italic tracking-widest">{value}</span>}
-                                />
-                            </PieChart>
-                        </ResponsiveContainer>
+                        <>
+                            {/* Chart Area */}
+                            <div className="h-[240px] w-full relative">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <PieChart>
+                                        <Pie
+                                            data={distribution}
+                                            cx="50%"
+                                            cy="50%"
+                                            innerRadius="70%"
+                                            outerRadius="95%"
+                                            paddingAngle={8}
+                                            dataKey="value"
+                                            stroke="none"
+                                            cornerRadius={12}
+                                            animationDuration={1500}
+                                        >
+                                            {distribution.map((entry, index) => (
+                                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                            ))}
+                                            <Label 
+                                                position="center" 
+                                                content={({ viewBox: { cx, cy } }) => (
+                                                    <g>
+                                                        <text x={cx} y={cy - 5} textAnchor="middle" dominantBaseline="middle" className="fill-slate-500 text-[10px] uppercase tracking-[0.2em] font-black italic">
+                                                            Total Units
+                                                        </text>
+                                                        <text x={cx} y={cy + 18} textAnchor="middle" dominantBaseline="middle" className="fill-white text-2xl font-black tracking-tighter italic">
+                                                            {distribution.reduce((acc, curr) => acc + curr.value, 0)}
+                                                        </text>
+                                                    </g>
+                                                )}
+                                            />
+                                        </Pie>
+                                        <Tooltip 
+                                            contentStyle={{ 
+                                                backgroundColor: '#1e293b', 
+                                                border: '1px solid rgba(255,255,255,0.1)', 
+                                                borderRadius: '20px',
+                                                padding: '12px',
+                                                boxShadow: '0 20px 50px rgba(0,0,0,0.5)'
+                                            }}
+                                            itemStyle={{ color: '#fff', fontSize: '13px', fontWeight: 'bold' }}
+                                        />
+                                    </PieChart>
+                                </ResponsiveContainer>
+                            </div>
+
+                            {/* Clean Responsive Legend */}
+                            <div className="space-y-3 mt-4 overflow-y-auto pr-1 max-h-[180px] custom-scrollbar">
+                                {distribution.map((item, index) => (
+                                    <div key={index} className="flex items-center justify-between p-3.5 rounded-2xl bg-white/2 border border-white/5 hover:bg-white/5 transition-all group/item">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-2.5 h-2.5 rounded-full shadow-[0_0_8px_rgba(0,0,0,0.5)]" style={{ backgroundColor: COLORS[index % COLORS.length] }}></div>
+                                            <span className="text-xs font-black text-slate-300 uppercase italic tracking-tight">{item.name}</span>
+                                        </div>
+                                        <div className="flex items-center gap-4">
+                                            <span className="text-[10px] font-black text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded-md border border-indigo-500/20">
+                                                {((item.value / distribution.reduce((a,c) => a+c.value, 0)) * 100).toFixed(1)}%
+                                            </span>
+                                            <ChevronRight size={14} className="text-slate-600 transition-transform group-hover/item:translate-x-1" />
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </>
                     ) : (
-                        <div className="flex flex-col items-center justify-center h-full text-center">
-                            <Activity className="text-slate-700 mb-4" size={48} />
-                            <p className="text-slate-500 font-black uppercase tracking-[0.2em] text-[10px]">No prescription data available.</p>
+                        <div className="flex-1 flex flex-col items-center justify-center text-center p-8 border-2 border-dashed border-white/5 rounded-[2.5rem]">
+                            <PackageSearch size={48} className="text-slate-700 mb-4" />
+                            <p className="text-slate-500 font-black uppercase tracking-[0.2em] text-[10px] italic">No categorical datasets captured yet.</p>
                         </div>
                     )}
-                </div>
-            </div>
-
-            {/* Premium Info Tip Card */}
-            <div className="bg-indigo-600 p-10 rounded-[3rem] shadow-2xl text-white flex flex-col justify-center relative overflow-hidden group">
-                <div className="absolute -bottom-10 -right-10 w-64 h-64 bg-white/5 blur-3xl rounded-full group-hover:scale-110 transition-transform"></div>
-                <div className="w-16 h-16 rounded-3xl bg-white/10 flex items-center justify-center mb-8 border border-white/20 transform -rotate-12 group-hover:rotate-0 transition-transform shadow-xl">
-                    <Pill className="size-8 text-white" />
-                </div>
-                <h2 className="text-3xl font-black mb-6 italic uppercase tracking-tighter flex items-center gap-3">
-                   Clinical Protocol
-                </h2>
-                <p className="text-indigo-100 leading-relaxed text-sm sm:text-base font-black uppercase italic tracking-tight opacity-80 decoration-indigo-400 decoration-wavy">
-                    Synchronize with your medical official before deploying new pharmaceutical entities. 
-                    Ensure clinical identity parameters are current. 
-                    Monitor invoice archives for insurance verification and audit integrity.
-                </p>
-                <div className="mt-10 pt-10 border-t border-white/10 flex items-center gap-6">
-                    <div className="flex flex-col">
-                        <p className="text-[10px] uppercase font-black tracking-[0.3em] text-indigo-300 italic mb-1">Entity Status</p>
-                        <div className="flex items-center gap-2">
-                            <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></span>
-                            <p className="text-lg font-black uppercase italic tracking-tighter">Verified Identity</p>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>
