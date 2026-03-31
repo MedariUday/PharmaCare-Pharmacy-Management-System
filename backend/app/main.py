@@ -20,10 +20,24 @@ from app.database.mongodb import get_database
 
 app = FastAPI(title=settings.PROJECT_NAME, lifespan=lifespan)
 
-# Debug Mode: Allow all origins to bypass CORS during 500 error debugging
+# Restore secure CORS allowed origins (from environment variables)
+origins = [
+    "http://localhost:5173",  # Local dev
+    "http://localhost:3000",
+    "http://127.0.0.1:5173",
+]
+
+# Add production frontend URL from env
+production_frontend = os.getenv("FRONTEND_URL")
+if production_frontend:
+    # Ensure it handles both trailing slash and no trailing slash
+    clean_url = production_frontend.rstrip('/')
+    origins.append(clean_url)
+    origins.append(f"{clean_url}/")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], 
+    allow_origins=origins, 
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -33,29 +47,11 @@ app.add_middleware(
 async def health_check():
     try:
         db = get_database()
-        db_connected = False
-        db_error = None
-        
         if db is not None:
-            try:
-                await db.command("ping")
-                db_connected = True
-            except Exception as e:
-                db_error = str(e)
-        
-        return {
-            "status": "online",
-            "database_connected": db_connected,
-            "error": db_error,
-            "mode": "production" if os.getenv("RENDER") else "development",
-            "diagnostics": {
-                "MONGODB_URL_found": bool(os.getenv("MONGODB_URL") or os.getenv("MONGODB_URI")),
-                "SECRET_KEY_found": bool(os.getenv("SECRET_KEY")),
-                "FRONTEND_URL_found": bool(os.getenv("FRONTEND_URL"))
-            }
-        }
+            await db.command("ping")
+        return {"status": "healthy", "database": "connected"}
     except Exception as e:
-        return JSONResponse(status_code=503, content={"status": "error", "message": str(e)})
+        return JSONResponse(status_code=503, content={"status": "unhealthy", "error": str(e)})
 
 # ── Static Files (Invoices) ──────────────────────────────────
 app.mount("/static", StaticFiles(directory="static"), name="static")
